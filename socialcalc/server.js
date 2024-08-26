@@ -5,9 +5,23 @@ const cors = require('cors');
 
 const app = express();
 const server = http.createServer(app);
+app.use(cors());
+
 const io = new Server(server, {
     cors: {
-      origin: 'http://localhost:5173', // Replace with your frontend URL
+      origin: 'http://localhost:8080', // Replace with your frontend URL
+      methods: ['GET', 'POST'],
+      allowedHeaders: ['Content-Type'],
+      credentials: true,
+    },
+    cors: {
+      origin: 'http://ec2-13-127-109-241.ap-south-1.compute.amazonaws.com:8080' from origin 'http://ec2-13-127-109-241.ap-south-1.compute.amazonaws.com:8080', // Replace with your frontend URL
+      methods: ['GET', 'POST'],
+      allowedHeaders: ['Content-Type'],
+      credentials: true,
+    },
+    cors: {
+      origin: 'http://13.127.109.241:8080', // Replace with your frontend URL
       methods: ['GET', 'POST'],
       allowedHeaders: ['Content-Type'],
       credentials: true,

@@ -1,0 +1,29 @@
+# Stage 1: Build the React app with Vite
+FROM node:latest AS build
+
+# Set the working directory
+WORKDIR /usr/src/app
+
+# Copy package.json and package-lock.json
+COPY package*.json ./
+
+# Install dependencies
+RUN npm install
+
+# Copy the rest of the application code
+COPY . .
+
+# Build the Vite app
+RUN npm run build
+
+# Stage 2: Serve the built app using a lightweight web server
+FROM nginx:alpine
+
+# Copy the build output from the previous stage to the nginx directory
+COPY --from=build /usr/src/app/dist /usr/share/nginx/html
+
+# Expose the port nginx is running on
+EXPOSE 8080
+
+# Start nginx
+CMD ["nginx", "-g", "daemon off;"]

@@ -1,22 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
-
 
 const socket = io('http://localhost:3000');
 
 function Spreadsheet() {
-  const [cells, setCells] = useState({});
+  const [data, setData] = useState({});
+  const [rows, setRows] = useState(20); // Initial rows
+  const [cols, setCols] = useState(10); // Initial columns
+  const containerRef = useRef(null);
 
   useEffect(() => {
-    // Load existing data from the server
-    socket.on('load-data', (data) => {
-      setCells(data);
+    socket.on('load-data', (loadedData) => {
+      setData(loadedData);
     });
 
-    // Update cell data when another user makes a change
     socket.on('update-cell', ({ cellId, value }) => {
-      setCells((prev) => ({
-        ...prev,
+      setData((prevData) => ({
+        ...prevData,
         [cellId]: value,
       }));
     });
@@ -27,30 +27,51 @@ function Spreadsheet() {
     };
   }, []);
 
-  const handleChange = (cellId, value) => {
-    // Update the local state immediately for a responsive UI
-    setCells((prev) => ({
-      ...prev,
+  const handleChange = (row, col, value) => {
+    const cellId = `${row}-${col}`;
+    setData((prevData) => ({
+      ...prevData,
       [cellId]: value,
     }));
-
-    // Send the updated value to the server
     socket.emit('update-cell', { cellId, value });
   };
 
-  const renderCell = (cellId) => (
-    <input
-      key={cellId}
-      type="text"
-      value={cells[cellId] || ''}
-      onChange={(e) => handleChange(cellId, e.target.value)}
-      className="border p-2"
-    />
-  );
+  const renderCell = (row, col) => {
+    const cellId = `${row}-${col}`;
+    return (
+      <input
+        key={cellId}
+        type="text"
+        value={data[cellId] || ''}
+        onChange={(e) => handleChange(row, col, e.target.value)}
+        className="border p-2"
+      />
+    );
+  };
+
+  const handleScroll = () => {
+    if (containerRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
+      if (scrollTop + clientHeight >= scrollHeight - 50) {
+        setRows((prevRows) => prevRows + 20);
+      }
+    }
+  };
 
   return (
-    <div className="grid grid-cols-4 gap-2 p-4">
-      {Array.from({ length: 16 }, (_, i) => renderCell(`cell-${i + 1}`))}
+    <div
+      ref={containerRef}
+      onScroll={handleScroll}
+      className="overflow-auto h-screen"
+      style={{ maxHeight: '100vh' }}
+    >
+      <div className="grid" style={{ gridTemplateColumns: `repeat(${cols}, 150px)` }}>
+        {Array.from({ length: rows }).map((_, rowIndex) =>
+          Array.from({ length: cols }).map((_, colIndex) =>
+            renderCell(rowIndex, colIndex)
+          )
+        )}
+      </div>
     </div>
   );
 }
@@ -58,7 +79,7 @@ function Spreadsheet() {
 function App() {
   return (
     <div className="App">
-      <h1 className="text-2xl font-bold p-4">SocialCalc</h1>
+      <h1 className="text-2xl font-bold p-4">Infinite Spreadsheet</h1>
       <Spreadsheet />
     </div>
   );
